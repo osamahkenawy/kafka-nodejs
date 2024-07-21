@@ -6,6 +6,10 @@ This repository contains an example project demonstrating a Kafka producer-consu
 
 ![Kafka Producer-Consumer Architecture](sample.png)
 
+## Sample
+
+![Kafka Producer-Consumer Architecture Custom Partition](addCustomPartiton.png)
+
 ### Components
 
 1. **Producer**:
@@ -19,6 +23,15 @@ This repository contains an example project demonstrating a Kafka producer-consu
 3. **Consumer**:
    - Reads and processes messages from the Kafka topic.
    - Logs the received developer data.
+
+4. **Custom Partitioning**:
+
+
+`function customPartitioner(numPartitions) {
+  const partition = Math.floor(Math.random() * numPartitions);
+  console.log(`Selected partition: ${partition}`);
+  return partition;
+}`
 
 ## Getting Started
 
