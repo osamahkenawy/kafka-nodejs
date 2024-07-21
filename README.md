@@ -6,7 +6,7 @@ This repository contains an example project demonstrating a Kafka producer-consu
 
 ![Kafka Producer-Consumer Architecture](sample.png)
 
-## Sample
+## Adding custom partition
 
 ![Kafka Producer-Consumer Architecture Custom Partition](addCustomPartiton.png)
 
