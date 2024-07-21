@@ -2,7 +2,7 @@
 
 This repository contains an example project demonstrating a Kafka producer-consumer setup using Node.js. The producer generates random developer data and sends it to a Kafka topic, while the consumer reads and processes the data from the topic.
 
-## Architecture
+## Sample
 
 ![Kafka Producer-Consumer Architecture](sample.png)
 
