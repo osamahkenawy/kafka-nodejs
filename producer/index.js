@@ -1,33 +1,69 @@
 import Kafka from 'node-rdkafka';
 import eventType from '../eventType.js';
 
-const stream = Kafka.Producer.createWriteStream({
-  'metadata.broker.list': 'localhost:9092'
-}, {}, {
-  topic: 'test'
-});
-
-stream.on('error', (err) => {
-  console.error('Error in our kafka stream');
-  console.error(err);
-});
-
-function queueRandomMessage() {
-  const name = getRandomName();
-  const language = getRandomLanguage();
-  const experience = getRandomExperience();
-  const timestamp = Date.now();
-  const attributes = getRandomAttributes();
-  const tags = getRandomTags();
-  const event = { name, language, experience, timestamp, attributes, tags };
-  const success = stream.write(eventType.toBuffer(event));     
-  if (success) {
-    console.log(`Message queued (${JSON.stringify(event)})`);
-  } else {
-    console.log('Too many messages in the queue already..');
-  }
+// Custom partitioner function
+function customPartitioner(numPartitions) {
+  const partition = Math.floor(Math.random() * numPartitions);
+  console.log(`Selected partition: ${partition}`);
+  return partition;
 }
 
+// Create a Kafka Producer
+const producer = new Kafka.Producer({
+  'metadata.broker.list': 'localhost:9092',
+});
+
+producer.on('ready', () => {
+  console.log('Producer is ready');
+
+  function queueRandomMessage() {
+    const name = getRandomName();
+    const language = getRandomLanguage();
+    const experience = getRandomExperience();
+    const timestamp = Date.now();
+    const attributes = getRandomAttributes();
+    const tags = getRandomTags();
+    const key = name; // Use name as the key for partitioning
+    const event = { name, language, experience, timestamp, attributes, tags };
+    const bufferedMessage = eventType.toBuffer(event);
+
+    // Get the number of partitions for the topic
+    producer.getMetadata({ topic: 'test', timeout: 10000 }, (err, metadata) => {
+      if (err) {
+        console.error('Error getting metadata:', err);
+        return;
+      }
+
+      const numPartitions = metadata.topics[0].partitions.length;
+      const partition = customPartitioner(numPartitions);
+      producer.produce(
+        'test', // Topic to send the message to
+        partition, // Specific partition to use
+        bufferedMessage, // Message content
+        key, // Key for partitioning
+        Date.now(), // Timestamp (optional)
+        (err, offset) => {
+          if (err) {
+            console.error('Error producing message:', err);
+          } else {
+            console.log(`Produced message to partition ${partition} at offset ${offset}:`, event);
+          }
+        }
+      );
+    });
+  }
+
+  // Produce a message every 3 seconds
+  setInterval(queueRandomMessage, 3000);
+});
+
+producer.on('event.error', (err) => {
+  console.error('Error from producer:', err);
+});
+
+producer.connect();
+
+// Helper functions to generate random data
 function getRandomName() {
   const names = ['Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Hannah', 'Ivy', 'Jack'];
   return names[Math.floor(Math.random() * names.length)];
@@ -61,7 +97,3 @@ function getRandomTags() {
   }
   return randomTags;
 }
-
-setInterval(() => {
-  queueRandomMessage();
-}, 3000);
